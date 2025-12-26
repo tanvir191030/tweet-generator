@@ -23,7 +23,7 @@ Vercel is the company that *made* Next.js, so it works perfectly.
 ### Step 3: Add Your Secrets
 When deploying, Vercel will ask for "Environment Variables". You must add:
 - **Name:** `OPENROUTER_API_KEY`
-- **Value:** `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` (Your connected key)
+- **Value:** `YOUR_OPENROUTER_KEY_HERE` (The key you generated on OpenRouter)
 
 ### Step 4: Updating an Existing Deployment
 Since your code is connected to GitHub, pushing changes (which we just did) automatically triggers a redeploy. **However, you MUST update the Environment Variable:**
@@ -32,7 +32,7 @@ Since your code is connected to GitHub, pushing changes (which we just did) auto
 2. Click **"Environment Variables"** on the left menu.
 3. Add a new variable:
    - **Key:** `OPENROUTER_API_KEY`
-   - **Value:** `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`
+   - **Value:** `YOUR_OPENROUTER_KEY_HERE`
 4. (Optional) You can delete the old `GOOGLE_API_KEY`.
 5. Go to the **"Deployments"** tab and redeploy the latest commit for changes to take effect.
 
