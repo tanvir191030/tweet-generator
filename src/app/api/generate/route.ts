@@ -5,7 +5,8 @@ export async function POST(req: Request) {
     try {
         let { content, platform, tone } = await req.json();
         content = content?.trim(); // Clean input
-        const apiKey = process.env.GOOGLE_API_KEY?.trim();
+        // Changed to use OpenRouter Key
+        const apiKey = process.env.OPENROUTER_API_KEY?.trim();
 
         if (!content) {
             return NextResponse.json({ error: "Content is required" }, { status: 400 });
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
 
         // --- MOCK RESPONSE FOR DEMO (If no API Key) ---
         if (!apiKey) {
-            console.warn("No GOOGLE_API_KEY found. Returning mock data.");
+            console.warn("No OPENROUTER_API_KEY found. Returning mock data.");
             await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate delay
             return NextResponse.json({
                 viralPosts: [
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
             });
         }
 
-        // --- REAL AI GENERATION ---
+        // --- REAL AI GENERATION (OpenRouter) ---
         const prompt = `
       You are a world-class personal branding expert.
       Task: Transform the SOURCE CONTENT into high-performing social media content.
@@ -128,27 +129,35 @@ export async function POST(req: Request) {
       }
     `;
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { response_mime_type: "application/json" }
-                }),
-            }
-        );
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "HTTP-Referer": "http://localhost:3000", // Required by OpenRouter for some tiers
+                "X-Title": "Tweet and Thread Generator", // Optional
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    { "role": "user", "content": prompt }
+                ]
+            })
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Gemini API Error details:", errorText);
-            throw new Error(`Gemini API Error: ${response.status} ${response.statusText} - ${errorText}`);
+            console.error("OpenRouter API Error details:", errorText);
+            throw new Error(`OpenRouter API Error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json();
-        const generatedText = data.candidates[0].content.parts[0].text;
-        const parsedData = JSON.parse(generatedText);
+        const generatedText = data.choices[0].message.content;
+
+        // Clean up markdown code blocks if present (OpenRouter/Other models might wrap in ```json ... ```)
+        const cleanJson = generatedText.replace(/```json\n?|\n?```/g, "").trim();
+
+        const parsedData = JSON.parse(cleanJson);
 
         return NextResponse.json(parsedData);
 
